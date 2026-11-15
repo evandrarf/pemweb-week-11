@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from './components/organisms/Header'
 import SearchBar from './components/molecules/SearchBar'
 import ProductGrid from './components/organisms/ProductGrid'
@@ -7,12 +7,38 @@ import EditProductModal from './components/organisms/EditProductModal'
 import DeleteProductModal from './components/organisms/DeleteProductModal'
 import { INITIAL_PRODUCTS } from './data/initialProducts'
 
+const STORAGE_KEY = 'pemweb_week11_products'
+
 export default function App() {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS)
+  // Initialize state from localStorage if available, otherwise use initial default products
+  const [products, setProducts] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      }
+    } catch {
+      // Fallback on error
+    }
+    return INITIAL_PRODUCTS
+  })
+
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [deletingProduct, setDeletingProduct] = useState(null)
+
+  // Persist products to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
+    } catch (e) {
+      console.error('Gagal menyimpan ke localStorage:', e)
+    }
+  }, [products])
 
   // Filter products by name (case-insensitive)
   const filteredProducts = products.filter((product) =>
@@ -55,6 +81,11 @@ export default function App() {
   const handleResetDefault = () => {
     setProducts(INITIAL_PRODUCTS)
     setSearchQuery('')
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_PRODUCTS))
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   return (
@@ -78,9 +109,18 @@ export default function App() {
         />
 
         {products.length > 0 && (
-          <footer className="pt-2 text-xs font-medium text-slate-500">
-            Menampilkan {filteredProducts.length} dari {products.length} produk
-          </footer>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 text-xs font-medium text-slate-500">
+            <span>
+              Menampilkan {filteredProducts.length} dari {products.length} produk
+            </span>
+            <button
+              type="button"
+              onClick={handleResetDefault}
+              className="text-slate-400 hover:text-slate-700 underline underline-offset-2 transition cursor-pointer"
+            >
+              Reset ke Data Awal
+            </button>
+          </div>
         )}
       </main>
 
