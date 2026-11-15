@@ -3,12 +3,14 @@ import Header from './components/organisms/Header'
 import SearchBar from './components/molecules/SearchBar'
 import ProductGrid from './components/organisms/ProductGrid'
 import AddProductModal from './components/organisms/AddProductModal'
+import EditProductModal from './components/organisms/EditProductModal'
 import { INITIAL_PRODUCTS } from './data/initialProducts'
 
 export default function App() {
   const [products, setProducts] = useState(INITIAL_PRODUCTS)
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState(null)
 
   // Filter products by name (case-insensitive)
   const filteredProducts = products.filter((product) =>
@@ -30,9 +32,14 @@ export default function App() {
     setProducts((prev) => [...prev, newProduct])
   }
 
+  const handleUpdateProduct = (updatedProduct) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+    )
+  }
+
   const handleOpenEditModal = (product) => {
-    // Will be wired in next commit
-    console.log('Open edit modal', product)
+    setEditingProduct(product)
   }
 
   const handleOpenDeleteModal = (product) => {
@@ -77,6 +84,14 @@ export default function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddProduct}
+      />
+
+      {/* Edit Product Modal */}
+      <EditProductModal
+        isOpen={Boolean(editingProduct)}
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onUpdate={handleUpdateProduct}
       />
     </div>
   )
