@@ -132,12 +132,15 @@ export default function App() {
       />
 
       {/* Edit Product Modal */}
-      <EditProductModal
-        isOpen={Boolean(editingProduct)}
-        product={editingProduct}
-        onClose={() => setEditingProduct(null)}
-        onUpdate={handleUpdateProduct}
-      />
+      {editingProduct && (
+        <EditProductModal
+          key={editingProduct.id}
+          isOpen={true}
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onUpdate={handleUpdateProduct}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       <DeleteProductModal

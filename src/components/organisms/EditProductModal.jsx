@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '../atoms/Modal'
 import Input from '../atoms/Input'
 import Button from '../atoms/Button'
@@ -14,17 +14,9 @@ export default function EditProductModal({
   product,
   onUpdate,
 }) {
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState('')
+  const [name, setName] = useState(product?.name || '')
+  const [price, setPrice] = useState(product?.price ? String(product.price) : '')
   const [errors, setErrors] = useState({})
-
-  useEffect(() => {
-    if (product) {
-      setName(product.name || '')
-      setPrice(product.price ? String(product.price) : '')
-      setErrors({})
-    }
-  }, [product])
 
   const validate = () => {
     const newErrors = {}

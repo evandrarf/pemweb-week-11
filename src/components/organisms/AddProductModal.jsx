@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from '../atoms/Modal'
 import Input from '../atoms/Input'
 import Button from '../atoms/Button'
@@ -13,14 +13,12 @@ export default function AddProductModal({ isOpen, onClose, onAdd }) {
   const [price, setPrice] = useState('')
   const [errors, setErrors] = useState({})
 
-  // Reset fields whenever modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setName('')
-      setPrice('')
-      setErrors({})
-    }
-  }, [isOpen])
+  const handleClose = () => {
+    setName('')
+    setPrice('')
+    setErrors({})
+    onClose()
+  }
 
   const validate = () => {
     const newErrors = {}
@@ -45,13 +43,13 @@ export default function AddProductModal({ isOpen, onClose, onAdd }) {
       name: name.trim(),
       price: parsePrice(price),
     })
-    onClose()
+    handleClose()
   }
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Tambah Produk"
       subtitle="Masukkan informasi produk baru."
     >
@@ -84,7 +82,7 @@ export default function AddProductModal({ isOpen, onClose, onAdd }) {
         />
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleClose}>
             Batal
           </Button>
           <Button variant="primary" type="submit">
