@@ -4,6 +4,7 @@ import SearchBar from './components/molecules/SearchBar'
 import ProductGrid from './components/organisms/ProductGrid'
 import AddProductModal from './components/organisms/AddProductModal'
 import EditProductModal from './components/organisms/EditProductModal'
+import DeleteProductModal from './components/organisms/DeleteProductModal'
 import { INITIAL_PRODUCTS } from './data/initialProducts'
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+  const [deletingProduct, setDeletingProduct] = useState(null)
 
   // Filter products by name (case-insensitive)
   const filteredProducts = products.filter((product) =>
@@ -38,13 +40,16 @@ export default function App() {
     )
   }
 
+  const handleDeleteProduct = (productId) => {
+    setProducts((prev) => prev.filter((p) => p.id !== productId))
+  }
+
   const handleOpenEditModal = (product) => {
     setEditingProduct(product)
   }
 
   const handleOpenDeleteModal = (product) => {
-    // Will be wired in next commit
-    console.log('Open delete modal', product)
+    setDeletingProduct(product)
   }
 
   const handleResetDefault = () => {
@@ -92,6 +97,14 @@ export default function App() {
         product={editingProduct}
         onClose={() => setEditingProduct(null)}
         onUpdate={handleUpdateProduct}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteProductModal
+        isOpen={Boolean(deletingProduct)}
+        product={deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        onConfirmDelete={handleDeleteProduct}
       />
     </div>
   )
