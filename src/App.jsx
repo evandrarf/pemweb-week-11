@@ -2,20 +2,32 @@ import { useState } from 'react'
 import Header from './components/organisms/Header'
 import SearchBar from './components/molecules/SearchBar'
 import ProductGrid from './components/organisms/ProductGrid'
+import AddProductModal from './components/organisms/AddProductModal'
 import { INITIAL_PRODUCTS } from './data/initialProducts'
 
 export default function App() {
   const [products, setProducts] = useState(INITIAL_PRODUCTS)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   // Filter products by name (case-insensitive)
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
   )
 
-  const handleOpenAddModal = () => {
-    // Will be wired in next commit
-    console.log('Open add modal')
+  const handleAddProduct = ({ name, price }) => {
+    const nextId =
+      products.length > 0
+        ? Math.max(...products.map((p) => p.id)) + 1
+        : 1
+
+    const newProduct = {
+      id: nextId,
+      name,
+      price,
+    }
+
+    setProducts((prev) => [...prev, newProduct])
   }
 
   const handleOpenEditModal = (product) => {
@@ -36,7 +48,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-10 px-4 sm:px-6 lg:px-8">
       <main className="max-w-5xl mx-auto space-y-6">
-        <Header onAddProduct={handleOpenAddModal} />
+        <Header onAddProduct={() => setIsAddModalOpen(true)} />
 
         <SearchBar
           value={searchQuery}
@@ -59,6 +71,13 @@ export default function App() {
           </footer>
         )}
       </main>
+
+      {/* Add Product Modal */}
+      <AddProductModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAdd={handleAddProduct}
+      />
     </div>
   )
 }
