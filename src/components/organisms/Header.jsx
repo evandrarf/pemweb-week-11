@@ -1,10 +1,15 @@
-import { Plus } from 'lucide-react'
+import { Plus, RotateCw } from 'lucide-react'
 import Button from '../atoms/Button'
 
 /**
- * Page Header displaying the application title, description, and primary add action.
+ * Page Header displaying application title, description,
+ * refresh button, and primary add action.
  */
-export default function Header({ onAddProduct }) {
+export default function Header({
+  onAddProduct,
+  onRefresh,
+  isRefreshing = false,
+}) {
   return (
     <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
       <div>
@@ -12,11 +17,26 @@ export default function Header({ onAddProduct }) {
           Manajemen Produk
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Kelola daftar produk dan harga dalam satu tempat.
+          Kelola data produk secara dinamis terhubung ke backend Express.js.
         </p>
       </div>
 
       <div className="flex items-center gap-2">
+        {onRefresh && (
+          <Button
+            onClick={onRefresh}
+            variant="outline"
+            size="md"
+            disabled={isRefreshing}
+            title="Segarkan data dari server"
+          >
+            <RotateCw
+              className={`w-4 h-4 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`}
+            />
+            <span className="hidden sm:inline">Segarkan</span>
+          </Button>
+        )}
+
         <Button onClick={onAddProduct} variant="primary" size="md">
           <Plus className="w-4 h-4" />
           <span>Tambah Produk</span>
@@ -25,3 +45,4 @@ export default function Header({ onAddProduct }) {
     </header>
   )
 }
+
