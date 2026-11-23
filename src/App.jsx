@@ -1,23 +1,40 @@
 import { useState, useEffect, useCallback } from 'react'
+import { CheckCircle2, X } from 'lucide-react'
 import Header from './components/organisms/Header'
 import SearchBar from './components/molecules/SearchBar'
 import ProductGrid from './components/organisms/ProductGrid'
 import AddProductModal from './components/organisms/AddProductModal'
 import EditProductModal from './components/organisms/EditProductModal'
 import DeleteProductModal from './components/organisms/DeleteProductModal'
-import { getProducts } from './services/api'
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} from './services/api'
 
 export default function App() {
+  // State manajemen data produk & siklus status server
   const [products, setProducts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [toast, setToast] = useState(null)
 
+  // State antarmuka pengguna
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [deletingProduct, setDeletingProduct] = useState(null)
 
-  // Mengambil data produk dari server saat tombol refresh / retry diklik
+  // Menampilkan notifikasi singkat (toast feedback)
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => {
+      setToast(null)
+    }, 4000)
+  }, [])
+
+  // Fungsi pengambil data produk dari backend (dapat dipicu tombol refresh / retry)
   const loadProducts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
@@ -32,7 +49,7 @@ export default function App() {
     }
   }, [])
 
-  // useEffect terpanggil saat komponen mount untuk mengambil data awal
+  // useEffect terpanggil sekali saat komponen pertama kali dimuat (mount)
   useEffect(() => {
     let ignore = false
 
@@ -61,37 +78,52 @@ export default function App() {
     }
   }, [])
 
-  // Filter produk berdasarkan nama (client-side search)
+  // Filter produk berdasarkan input pencarian (client-side query)
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
   )
 
-  const handleOpenEditModal = (product) => {
-    setEditingProduct(product)
-  }
-
-  const handleOpenDeleteModal = (product) => {
-    setDeletingProduct(product)
-  }
-
-  // Callback sementara untuk CRUD lokal sebelum diintegrasikan di Step 4
-  const handleAddProductSuccess = (newProduct) => {
+  // Handler: Tambah Produk (POST /products)
+  const handleAddProduct = async ({ name, price }) => {
+    const newProduct = await createProduct({ name, price })
     setProducts((prev) => [...prev, newProduct])
+    showToast(`Produk "${newProduct.name}" berhasil ditambahkan ke server!`)
   }
 
-  const handleUpdateProductSuccess = (updatedProduct) => {
+  // Handler: Update Produk (PUT /products/:id)
+  const handleUpdateProduct = async ({ id, name, price }) => {
+    const updated = await updateProduct(id, { name, price })
     setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      prev.map((p) => (p.id === updated.id ? updated : p))
     )
+    showToast(`Produk "${updated.name}" berhasil diperbarui!`)
   }
 
-  const handleDeleteProductSuccess = (productId) => {
+  // Handler: Hapus Produk (DELETE /products/:id)
+  const handleDeleteProduct = async (productId) => {
+    await deleteProduct(productId)
     setProducts((prev) => prev.filter((p) => p.id !== productId))
+    showToast('Produk berhasil dihapus dari server!')
   }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-10 px-4 sm:px-6 lg:px-8">
       <main className="max-w-5xl mx-auto space-y-6">
+        {/* Toast Notification Banner */}
+        {toast && (
+          <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-900 text-white px-4 py-3 rounded-xl shadow-lg border border-emerald-700 animate-in fade-in slide-in-from-top-2 duration-200">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <p className="text-sm font-medium">{toast.message}</p>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="text-emerald-300 hover:text-white p-1 rounded-md transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <Header
           onAddProduct={() => setIsAddModalOpen(true)}
           onRefresh={loadProducts}
@@ -110,14 +142,14 @@ export default function App() {
           isLoading={isLoading}
           error={error}
           onRetry={loadProducts}
-          onEdit={handleOpenEditModal}
-          onDelete={handleOpenDeleteModal}
+          onEdit={(product) => setEditingProduct(product)}
+          onDelete={(product) => setDeletingProduct(product)}
           onAddProduct={() => setIsAddModalOpen(true)}
           searchQuery={searchQuery}
           onClearSearch={() => setSearchQuery('')}
         />
 
-        {/* Info ringkasan data produk saat sukses */}
+        {/* Ringkasan status data produk */}
         {!isLoading && !error && products.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 text-xs font-medium text-slate-500">
             <span>
@@ -138,7 +170,7 @@ export default function App() {
       <AddProductModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAdd={handleAddProductSuccess}
+        onAdd={handleAddProduct}
       />
 
       {/* Edit Product Modal */}
@@ -148,7 +180,7 @@ export default function App() {
           isOpen={true}
           product={editingProduct}
           onClose={() => setEditingProduct(null)}
-          onUpdate={handleUpdateProductSuccess}
+          onUpdate={handleUpdateProduct}
         />
       )}
 
@@ -157,7 +189,7 @@ export default function App() {
         isOpen={Boolean(deletingProduct)}
         product={deletingProduct}
         onClose={() => setDeletingProduct(null)}
-        onConfirmDelete={handleDeleteProductSuccess}
+        onConfirmDelete={handleDeleteProduct}
       />
     </div>
   )
