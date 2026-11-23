@@ -1,99 +1,137 @@
-# Pemrograman Web - Week 11: Fundamental React
+# Pemrograman Web - Week 11: Fundamental React & Integrasi Backend Express.js
 
-Aplikasi **Manajemen Produk** dibangun dengan **React 19**, **Bun**, dan **Tailwind CSS v4** untuk memenuhi tugas praktikum Pemrograman Web - Fundamental React (Slide 27).
+Aplikasi **Manajemen Produk** dibangun dengan **React 19**, **Bun**, dan **Tailwind CSS v4** yang diintegrasikan langsung dengan REST API **Express.js + Prisma ORM + PostgreSQL** (`week-10`). Proyek ini mengimplementasikan pengelolaan **state & effect**, pengambilan data dari server backend, serta penanganan 4 kondisi antarmuka (**loading**, **sukses**, **kosong**, dan **error**).
 
 ---
 
-## 📸 Fitur & Tampilan Antarmuka
+## 🎯 Capaian Pembelajaran Praktikum
 
-Aplikasi mereplikasi dan menyempurnakan spesifikasi tampilan pada slide praktikum dengan gaya visual yang bersih, fungsional, dan ramah pengguna:
+1. **State & Effect Management (`useState`, `useEffect`)**:
+   - Memahami siklus hidup komponen React saat pertama kali dimuat (*mount*).
+   - Mengambil data asinkron dari server backend Express.js menggunakan `useEffect` dengan pola *cleanup/cancellation* aman.
+   - Mengelola state status aplikasi: `products` (data katalog), `isLoading` (indikator pemuatan), `error` (pesan kegagalan), serta `searchQuery` (filter nama).
 
-1. **Halaman Utama (Product Catalog)**
-   - Header aplikasi: judul *Manajemen Produk*, deskripsi, dan tombol aksi utama `+ Tambah Produk`.
-   - Bilah pencarian produk (*live search*) dengan penghitung total item.
-   - Grid kartu produk responsif (1 kolom pada mobile, 2 kolom pada tablet, 3 kolom pada desktop).
-   - Setiap kartu menampilkan badge `ID: {id}`, nama produk, harga terformat Rupiah (`Rp{price}`), serta tombol aksi `Edit` dan `Hapus`.
-   - Ringkasan tampilan di footer (*Menampilkan X dari Y produk*) serta tombol *Reset ke Data Awal*.
+2. **4 Kondisi Antarmuka Pengguna (UI States)**:
+   - ⏳ **Loading State**: Menampilkan grid *skeleton loader* beranimasi (`animate-pulse`) yang mereplikasi kartu produk saat server sedang merespons request.
+   - ✅ **Success State**: Menampilkan daftar kartu produk responsif dari database PostgreSQL, lengkap dengan informasi ID, nama, format harga Rupiah, bilah pencarian *live search*, dan ringkasan jumlah item.
+   - 📭 **Empty State**: Tampilan visual khusus dengan pesan informatif:
+     - *Empty Database*: Saat basis data belum memiliki produk, disertai tombol pintasan `+ Tambah Produk Baru`.
+     - *Empty Search*: Saat kata kunci pencarian tidak ditemukan, disertai tombol `Hapus Pencarian`.
+   - ⚠️ **Error State**: Banner peringatan interaktif saat koneksi ke server backend gagal/terputus, lengkap dengan tip troubleshooting dan tombol aksi **"Coba Lagi" (Retry)** untuk mencoba memuat ulang data.
 
-2. **Pop-up Tambah Produk**
-   - Modal input untuk menambah produk baru ke dalam daftar.
-   - Validasi data input: nama produk wajib diisi dan harga harus berupa angka lebih dari 0.
-   - Penomoran ID secara otomatis bertambah (*auto-increment*).
+3. **Operasi CRUD Terintegrasi Penuh ke Backend**:
+   - `GET /products` : Mengambil seluruh data produk dari database.
+   - `POST /products` : Menambah produk baru ke database dengan validasi nama dan harga.
+   - `PUT /products/:id` : Memperbarui data nama dan harga produk di database.
+   - `DELETE /products/:id` : Menghapus produk secara permanen dari database.
 
-3. **Pop-up Edit Produk**
-   - Modal edit dengan data yang telah terisi (*pre-filled*) sesuai kartu yang dipilih.
-   - Menampilkan badge ID produk yang sedang disunting.
-   - Memperbarui data produk secara instan ke state aplikasi dan penyimpanan lokal.
-
-4. **Pop-up Konfirmasi Hapus Produk**
-   - Dialog peringatan konfirmasi sebelum menghapus item permanen.
-   - Menampilkan kartu ringkasan produk (ID, Nama, Harga) yang akan dihapus.
-
-5. **Penyimpanan Lokal (LocalStorage Persistence)**
-   - Setiap penambahan, pembaruan, maupun penghapusan data tersimpan di `localStorage` peramban sehingga tidak hilang saat halaman direfresh.
+4. **Feedback & Notifikasi Interaktif**:
+   - Indikator status tombol *Menyimpan...* / *Menghapus...* saat request mutasi data sedang dikirim.
+   - *Toast notification* otomatis saat operasi CRUD berhasil dijalankan.
+   - Tombol **Segarkan / Refresh** pada header untuk sinkronisasi instan dengan server.
 
 ---
 
 ## 🏗️ Struktur Proyek (Atomic Design)
 
-Sesuai materi *Atomic Design* pada slide perkuliahan:
-
 ```text
 src/
 ├── components/
-│   ├── atoms/          # Komponen dasar (Button, Input, Modal)
-│   │   ├── Button.jsx
-│   │   ├── Input.jsx
-│   │   └── Modal.jsx
-│   ├── molecules/      # Komposisi atom (SearchBar, ProductCard)
-│   │   ├── ProductCard.jsx
-│   │   └── SearchBar.jsx
-│   └── organisms/      # Komponen fungsional lengkap & modal dialog
-│       ├── AddProductModal.jsx
-│       ├── DeleteProductModal.jsx
-│       ├── EditProductModal.jsx
-│       ├── Header.jsx
-│       └── ProductGrid.jsx
-├── data/               # Data inisial bawaan tugas
-│   └── initialProducts.js
-├── utils/              # Fungsi pembantu (format Rupiah, parser harga)
-│   └── formatters.js
-├── App.jsx             # State orchestration & layout utama
-├── index.css           # Styling dasar Tailwind CSS v4
-└── main.jsx            # Entry point React 19
+│   ├── atoms/          # Komponen dasar atomik
+│   │   ├── Button.jsx          # Tombol reusable dengan berbagai varian
+│   │   ├── Input.jsx           # Input teks/angka dengan label & validasi
+│   │   ├── Modal.jsx           # Kontainer pop-up dialog
+│   │   └── Skeleton.jsx        # Placeholder loading beranimasi pulse
+│   ├── molecules/      # Komposisi atom
+│   │   ├── ErrorAlert.jsx      # Kartu error backend dengan tombol retry
+│   │   ├── ProductCard.jsx     # Kartu informasi produk + tombol edit/hapus
+│   │   └── SearchBar.jsx       # Bilah pencarian + counter produk
+│   └── organisms/      # Komponen kompleks & dialog aksi
+│       ├── AddProductModal.jsx    # Pop-up tambah produk ke API
+│       ├── DeleteProductModal.jsx # Pop-up konfirmasi hapus dari API
+│       ├── EditProductModal.jsx   # Pop-up edit produk ke API
+│       ├── Header.jsx             # Header dengan judul & tombol aksi/refresh
+│       └── ProductGrid.jsx        # Pengelola 4 kondisi tampilan antarmuka
+├── services/           # Modul komunikasi HTTP ke backend Express.js
+│   └── api.js          # Fetch client untuk endpoint produk (GET, POST, PUT, DELETE)
+├── utils/              # Fungsi pembantu
+│   └── formatters.js   # Pemformatan mata uang Rupiah
+├── App.jsx             # Orkestrasi state, effect, dan layout utama
+├── index.css           # Styling Tailwind CSS v4
+├── main.jsx            # Entry point React 19
+└── vite.config.js      # Konfigurasi Vite & dev server proxy (/api -> :3000)
 ```
 
 ---
 
-## 🚀 Panduan Menjalankan Proyek
+## 🚀 Panduan Menjalankan Proyek (Full Stack)
 
 ### Prasyarat
-- [Bun](https://bun.sh/) (v1.2+) terpasang pada komputer Anda.
+- [Bun](https://bun.sh/) (v1.2+) atau [Node.js](https://nodejs.org/) (v20+).
+- Docker Desktop aktif (untuk PostgreSQL database pada `week-10`).
 
-### Langkah-langkah
-1. **Clone repositori:**
+---
+
+### Langkah 1: Jalankan Backend Express.js (`week-10`)
+1. Buka terminal baru dan masuk ke folder `week-10`:
    ```bash
-   git clone git@github.com:evandrarf/pemweb-week-11.git
-   cd pemweb-week-11
+   cd ../week-10
    ```
-
-2. **Pindah ke branch `dev` (jika ingin mereview pekerjaan):**
+2. Jalankan container PostgreSQL (jika belum aktif):
    ```bash
-   git checkout dev
+   npm run docker:up
    ```
+3. Lakukan migrasi database & seeding awal:
+   ```bash
+   npx prisma migrate dev
+   ```
+4. Jalankan backend Express:
+   ```bash
+   npm run dev
+   ```
+   *Backend Express akan berjalan di `http://localhost:3000`.*
 
-3. **Install dependensi:**
+---
+
+### Langkah 2: Jalankan Frontend React (`week-11`)
+1. Buka terminal pada folder `week-11`:
+   ```bash
+   cd week-11
+   ```
+2. Pastikan berada di branch `feat/backend-api-integration`:
+   ```bash
+   git checkout feat/backend-api-integration
+   ```
+3. Install dependensi (jika belum):
    ```bash
    bun install
    ```
-
-4. **Jalankan server pengembangan:**
+4. Jalankan server pengembangan Vite:
    ```bash
    bun dev
    ```
-   Buka peramban pada alamat [http://localhost:5173](http://localhost:5173).
+   *Aplikasi frontend dapat diakses di [http://localhost:5173](http://localhost:5173).*
 
-5. **Build produksi:**
-   ```bash
-   bun run build
-   ```
+---
+
+## 🧪 Skenario Pengujian 4 Kondisi Antarmuka
+
+| Kondisi | Cara Menguji | Tampilan yang Diharapkan |
+| :--- | :--- | :--- |
+| **Error** | Matikan backend Express (`Ctrl+C` di terminal `week-10`), lalu refresh halaman React. | Muncul kartu peringatan merah `Gagal Memuat Data Produk` lengkap dengan tombol **Coba Lagi**. |
+| **Loading** | Klik tombol **Coba Lagi** atau tombol **Segarkan**. | Muncul 6 kartu skeleton berwarna abu-abu berdenyut halus (*pulse animation*). |
+| **Sukses** | Nyalakan kembali backend Express, lalu klik **Coba Lagi**. | Muncul grid kartu produk dengan ID asli dari PostgreSQL, harga terformat Rupiah, dan counter produk. |
+| **Kosong (Search)** | Ketik kata acak pada bilah pencarian (misal: `xyz123`). | Muncul kartu peringatan kosong *Produk tidak ditemukan* dengan tombol *Hapus Pencarian*. |
+| **Kosong (DB)** | Hapus seluruh produk dari database. | Muncul kartu *Belum ada produk di server* dengan tombol *Tambah Produk Baru*. |
+
+---
+
+## 📦 Riwayat Commit Berurutan
+
+Perubahan dalam branch `feat/backend-api-integration` dibagi ke dalam commit atomik yang terpisah:
+1. `feat(api): setup API client service and Vite proxy`
+2. `feat(ui): implement skeleton loader and error state components`
+3. `feat(integration): implement useEffect fetching with loading, empty, and error states`
+4. `feat(crud): wire create, update, and delete actions with Express backend`
+5. `feat(cors): enable CORS middleware for frontend communication` *(di repository week-10)*
+6. `docs: update documentation with API integration and state management guide`
